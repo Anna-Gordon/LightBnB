@@ -1,5 +1,27 @@
 const properties = require('./json/properties.json');
 const users = require('./json/users.json');
+const database = require('./database');
+// console.log(database)
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  user: 'vagrant',
+  password: '123',
+  host: 'localhost',
+  database: 'lightbnb'
+});
+
+// pool.connect()
+//     .then(client => {
+//       return client
+//       pool.query(`SELECT * FROM properties LIMIT $1`, [limit])
+//   .then(data => {
+//     getAllProperties(data, 10)
+//     .catch(err => {
+//       console.log(err);
+//     })
+//   })
+//   })
 
 /// Users
 
@@ -66,14 +88,26 @@ exports.getAllReservations = getAllReservations;
  * @param {*} limit The number of results to return.
  * @return {Promise<[{}]>}  A promise to the properties.
  */
-const getAllProperties = function(options, limit = 10) {
-  const limitedProperties = {};
-  for (let i = 1; i <= limit; i++) {
-    limitedProperties[i] = properties[i];
-  }
-  return Promise.resolve(limitedProperties);
+
+const getAllProperties = (options, limit = 10) => {
+  return pool.query(`SELECT * FROM properties LIMIT $1`, [limit])
+  .then(res => res.rows);
+  // const limitedProperties = {};
+  // for (let i = 1; i <= limit; i++) {
+  //   limitedProperties[i] = properties[i];
+  // }
+  // return Promise.resolve(limitedProperties);
 }
 exports.getAllProperties = getAllProperties;
+
+// const read = (id, cb) => {
+//   db.query('SELECT * FROM movie_villains WHERE id = $1;', [id])
+//     .then(data => {
+//       cb(null, data.rows[0]);
+//     })
+//     .catch(err => cb(err));
+// };
+
 
 
 /**
