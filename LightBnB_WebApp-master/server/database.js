@@ -30,16 +30,17 @@ pool.connect(err => {
  */
 
 const getUserWithEmail = (email) => {
-  let user;
-  pool.query(`SELECT * FROM users WHERE email = $1`, [email.toLowerCase()])
-  .then(res => {
-    if (res.rows) {
-      user = res.rows;
-      return user;
-    } else {
-      return user = null;
-    }
-  })
+  // let user;
+  return pool.query(`SELECT * FROM users WHERE email = $1`, [email])
+  .then(res => res.rows[0])
+    // if (res.rows) {
+      // user = res.rows[0];
+      // return user;
+    // } else {
+    //   return user = null;
+    // }
+    // res.rows[0]
+  // })
   .catch(err => {
     console.log('Error message: ', err);
   });
@@ -52,16 +53,8 @@ exports.getUserWithEmail = getUserWithEmail;
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function(id) {
-  let user;
-  pool.query(`SELECT * FROM users WHERE id = $1`, [id])
-  .then (res => {
-    if (res.rows) {
-    user = res.rows;
-    return user;
-  } else {
-    return user = null;
-  }
-})
+  return pool.query(`SELECT * FROM users WHERE id = $1`, [id])
+  .then (res => res.rows[0])
   .catch(err => {
     console.log('Error message: ', err);
   });
@@ -75,16 +68,14 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = (user) => {
-  pool.query(`INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *;`, values)
-  .then(res => {
-    user = res.rows;
-    return user;
-  })
+  return pool.query(`INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *;`, [user.name, user.email, user.password])
+  .then(res => res.rows[0])
   .catch(err => {
     console.log('Error: ', err);
   })
 }
 /**
+ * VALUE FOR TEST (TERMINAL)
  let values = ['philen', 'philen@comcast.net', '$2a$10$FB/BOAVhpuLvpOREQVmvmezD4ED/.JBIDRh70tGevYzYzQgFId2u.'];
  console.log(addUser(values));
  */
@@ -98,8 +89,24 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guest_id, limit = 10) {
-  return getAllProperties(null, 2);
+  return pool
+    .query(`SELECT reservations.*, properties.*, AVG(rating) as average_rating
+              FROM reservations
+                  JOIN properties ON properties.id = reservations.property_id
+                  JOIN property_reviews ON property_reviews.property_id = reservations.property_id
+                WHERE reservations.guest_id = $1
+                GROUP BY reservations.id, properties.id, properties.title, cost_per_night
+                ORDER BY start_date DESC
+                LIMIT $2;`,
+      [guest_id, limit]
+    )
+    .then(res => res.rows);
+
+  // return getAllProperties(null, 2);
 }
+// 45 | Louis Washington | chloecarter@google.com | $2a$10$FB/BOAVhpuLvpOREQVmvmezD4ED/.JBIDRh70tGevYzYzQgFId2u.
+
+// console.log(getAllReservations(45, 2));
 exports.getAllReservations = getAllReservations;
 
 /// Properties
