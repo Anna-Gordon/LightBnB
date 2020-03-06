@@ -1,25 +1,6 @@
 const properties = require('./json/properties.json');
 const users = require('./json/users.json');
-
-const { Pool } = require('pg');
-
-
-const options = {
-  user: 'vagrant',
-  password: '123',
-  host: 'localhost',
-  port: 5432,
-  database: 'lightbnb'
-};
-
-const pool = new Pool(options);
-pool.connect(err => {
-  if(err) {
-    console.log(err);
-  } else {
-    console.log('DB connected');
-  }
-});
+const db = require('./db');
 
 /// Users
 
@@ -30,17 +11,14 @@ pool.connect(err => {
  */
 
 const getUserWithEmail = (email) => {
-  // let user;
-  return pool.query(`SELECT * FROM users WHERE email = $1`, [email])
-  .then(res => res.rows[0])
-    // if (res.rows) {
-      // user = res.rows[0];
-      // return user;
-    // } else {
-    //   return user = null;
-    // }
-    // res.rows[0]
-  // })
+  return db.query(`SELECT * FROM users WHERE email = $1`, [email])
+  .then(res => {
+    if (res.rows) {
+      return res.rows[0];
+    } else {
+      return null;
+    }
+  })
   .catch(err => {
     console.log('Error message: ', err);
   });
@@ -53,7 +31,7 @@ exports.getUserWithEmail = getUserWithEmail;
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function(id) {
-  return pool.query(`SELECT * FROM users WHERE id = $1`, [id])
+  return db.query(`SELECT * FROM users WHERE id = $1`, [id])
   .then (res => res.rows[0])
   .catch(err => {
     console.log('Error message: ', err);
@@ -68,14 +46,14 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = (user) => {
-  return pool.query(`INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *;`, [user.name, user.email, user.password])
+  return db.query(`INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *;`, [user.name, user.email, user.password])
   .then(res => res.rows[0])
   .catch(err => {
     console.log('Error: ', err);
   })
 }
 /**
- * VALUE FOR TEST (TERMINAL)
+ * VALUES FOR TEST (TERMINAL)
  let values = ['philen', 'philen@comcast.net', '$2a$10$FB/BOAVhpuLvpOREQVmvmezD4ED/.JBIDRh70tGevYzYzQgFId2u.'];
  console.log(addUser(values));
  */
@@ -89,7 +67,7 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guest_id, limit = 10) {
-  return pool.query(`SELECT reservations.*, properties.*, AVG(rating) as average_rating
+  return db.query(`SELECT reservations.*, properties.*, AVG(rating) as average_rating
               FROM reservations
                   JOIN properties ON properties.id = reservations.property_id
                   JOIN property_reviews ON property_reviews.property_id = reservations.property_id
@@ -164,7 +142,7 @@ const getAllProperties = (options, limit = 10) => {
     console.log('queryString', queryString, 'queryParams', queryParams);
   
     // 6
-    return pool.query(queryString, queryParams)
+    return db.query(queryString, queryParams)
     .then(res => {
       return res.rows
     })
@@ -180,7 +158,7 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function(property) {
-  return pool.query(`INSERT INTO properties (
+  return db.query(`INSERT INTO properties (
     owner_id,
     title,
     description,
